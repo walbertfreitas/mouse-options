@@ -283,6 +283,20 @@ class FastReconnectTest(unittest.TestCase):
         self.assertLessEqual(second, 3)   # identificação (2) + conferência da tabela (1)
         self.assertGreater(first, 15)
 
+    def test_one_cache_per_route(self):
+        """Pelo receptor o M720 declara outros recursos: o cache do Bluetooth não pode ser descartado."""
+        from mouse_options.daemon.manager import cache_name
+        (_n, _k, _c, bt_cache), _ = self.identify(FakeMouse())
+        self.manager.state.entry("1A2B3C4D")[cache_name("direct")] = bt_cache
+        via_receiver = FakeMouse(features=FakeMouse().features + [hd.ADJUSTABLE_DPI])
+        dev = hd.Device(via_receiver)
+        dev.ping()
+        *_, rx_cache = self.manager._identify(dev, dev.ids(), "receiver")
+        self.assertIsNotNone(rx_cache)                              # 1ª vez pelo receptor: descobre
+        self.manager.state.entry("1A2B3C4D")[cache_name("receiver")] = rx_cache
+        *_, again = self.identify(FakeMouse())[0]                   # de volta ao Bluetooth
+        self.assertIsNone(again)                                    # o cache dele continua valendo
+
     def test_changed_device_is_discovered_again(self):
         (_n, _k, _c, cache), _ = self.identify(FakeMouse())
         self.manager.state.entry("1A2B3C4D")["cache"] = cache

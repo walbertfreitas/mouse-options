@@ -44,6 +44,12 @@ SETTINGS = {"pointer_speed": "pointer_speed", "hires-smooth-invert": "invert_scr
             "thumb-scroll-invert": "thumb_invert"}
 
 
+def cache_name(route: str) -> str:
+    """Um cache por caminho: pelo receptor o aparelho declara outra lista de recursos que pelo Bluetooth,
+    e um cache só seria jogado fora a cada troca de canal (~0,9 s a mais para ficar pronto)."""
+    return "cache" if route == "direct" else f"cache-{route}"
+
+
 def codename(name: str) -> str:
     """'M720 Triathlon Multi-Device Mouse' → 'M720 Triathlon'."""
     name = re.sub(r"^Logitech\s+", "", name)
@@ -195,7 +201,8 @@ class Manager:
             return
         ids = dev.ids()
         step("ids")
-        identity = self._identify(dev, ids)
+        route = "receiver" if slot is not None else "direct"
+        identity = self._identify(dev, ids, route)
         step("botões")
         if identity is None:
             transport.close()
@@ -225,7 +232,7 @@ class Manager:
                     self._link_changed(other_path, online=False)
             self.sessions[path] = session
             if cache:
-                self.state.entry(key)["cache"] = cache
+                self.state.entry(key)[cache_name(route)] = cache
                 self.state.save()
 
         self._on_main(register)
@@ -249,9 +256,9 @@ class Manager:
                     return candidate if candidate.protocol[0] >= 2 else None
         return None
 
-    def _identify(self, dev: hd.Device, ids) -> tuple | None:
+    def _identify(self, dev: hd.Device, ids, route: str = "direct") -> tuple | None:
         """(nome, tipo, botões, cache novo ou None). Usa o que foi guardado se o aparelho for o mesmo."""
-        cache = self.state.devices.get(ids.unit_id, {}).get("cache") if ids else None
+        cache = self.state.devices.get(ids.unit_id, {}).get(cache_name(route)) if ids else None
         if cache and cache.get("model_id") == ids.model_id and cache.get("kind") in POINTING:
             dev.preload({int(fid): idx for fid, idx in cache["features"].items()})
             try:
