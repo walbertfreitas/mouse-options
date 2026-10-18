@@ -19,6 +19,16 @@ EN: dict[str, str] = {
     "Clique num botão (no desenho ou na lista) para escolher o que ele faz em {where}.":
         "Click a button (on the picture or in the list) to choose what it does in {where}.",
     "igual a Todos os aplicativos": "same as All applications",
+    'Com Easy-Switch: aperte o botão até acender o canal desejado e segure-o até a luz piscar rápido.':
+        'With Easy-Switch: press the button until the channel you want lights up, then hold it until the light blinks fast.',
+    '<b>Desligue e ligue o aparelho</b> pela chave liga/desliga.':
+        '<b>Turn the device off and on</b> with its power switch.',
+    'Aparelhos sem Easy-Switch: só desligue e ligue.':
+        'Devices without Easy-Switch: just turn them off and on.',
+    'Para usar outro mouse ou teclado com este receptor, clique em Parear novo aparelho e siga os passos.':
+        'To use another mouse or keyboard with this receiver, click Pair new device and follow the steps.',
+    'Nenhum aparelho apareceu a tempo. Tente de novo e não esqueça de desligar e ligar o aparelho depois que a luz piscar rápido.':
+        'No device showed up in time. Try again, and remember to turn the device off and on after the light blinks fast.',
     'Aparelho':
         'Device',
     'Aparelhos pareados no receptor USB e pareamento de aparelhos novos':
@@ -45,12 +55,8 @@ EN: dict[str, str] = {
         'This device is not compatible with the Unifying receiver.',
     'Headset':
         'Headset',
-    'Ligue o aparelho que você quer parear (se já estiver ligado, desligue e ligue de novo). Em aparelhos com Easy-Switch, escolha um canal e segure o botão dele até a luz piscar rápido.':
-        'Turn on the device you want to pair (if it is already on, turn it off and on again). On devices with Easy-Switch, pick a channel and hold its button until the light blinks fast.',
     'Mouse':
         'Mouse',
-    'Nenhum aparelho apareceu a tempo. Tente de novo: ligue o aparelho logo depois de clicar em Parear novo aparelho.':
-        'No device showed up in time. Try again: turn the device on right after clicking Pair new device.',
     'Nenhum aparelho pareado com este receptor.':
         'No devices paired with this receiver.',
     'Nenhum receptor conectado. Coloque o receptor USB no computador.':
@@ -61,8 +67,6 @@ EN: dict[str, str] = {
         'The receiver is full. Unpair a device to make room.',
     'O receptor não aceitou o pedido. Tire e coloque o receptor de novo e tente outra vez.':
         'The receiver did not accept the request. Unplug and replug the receiver and try again.',
-    'Para usar outro mouse ou teclado com este receptor, clique em Parear novo aparelho e depois ligue o aparelho.':
-        'To use another mouse or keyboard with this receiver, click Pair new device and then turn the device on.',
     'Parear novo aparelho':
         'Pair new device',
     'Parear outro aparelho':

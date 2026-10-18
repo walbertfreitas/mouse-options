@@ -14,8 +14,8 @@ DEVICE_KINDS = {"mouse": "Mouse", "keyboard": "Teclado", "trackball": "Trackball
                 "presenter": "Apresentador", "numpad": "Teclado numérico", "remote": "Controle remoto",
                 "headset": "Headset", "unknown": "Aparelho"}
 ERRORS = {
-    "timeout": "Nenhum aparelho apareceu a tempo. Tente de novo: ligue o aparelho logo depois de clicar em "
-               "Parear novo aparelho.",
+    "timeout": "Nenhum aparelho apareceu a tempo. Tente de novo e não esqueça de desligar e ligar o aparelho "
+               "depois que a luz piscar rápido.",
     "unsupported": "Este aparelho não é compatível com o receptor Unifying.",
     "full": "O receptor está cheio. Despareie um aparelho para liberar espaço.",
     "failed": "O receptor não aceitou o pedido. Tire e coloque o receptor de novo e tente outra vez.",
@@ -172,10 +172,13 @@ class ReceiverDialog(W.QDialog):
             self.pair_btn.setVisible(False)
             self.cancel_btn.setVisible(True)
             self.progress.setVisible(True)
+            # o mesmo roteiro do Logi Options/Unifying Software: o aparelho só pede para parear ao ser ligado
             self.pair_text.setText(
-                "<b>" + T("Esperando o aparelho…") + "</b><br>" +
-                T("Ligue o aparelho que você quer parear (se já estiver ligado, desligue e ligue de novo). Em "
-                  "aparelhos com Easy-Switch, escolha um canal e segure o botão dele até a luz piscar rápido."))
+                "<b>" + T("Esperando o aparelho…") + "</b><ol style='margin-left: -20px'>" +
+                "<li>" + T("Com Easy-Switch: aperte o botão até acender o canal desejado e segure-o até a luz "
+                           "piscar rápido.") + "</li>" +
+                "<li>" + T("<b>Desligue e ligue o aparelho</b> pela chave liga/desliga.") + "</li></ol>" +
+                T("Aparelhos sem Easy-Switch: só desligue e ligue."))
             if not self.timer.isActive():
                 self.timer.start()
             return
@@ -190,7 +193,7 @@ class ReceiverDialog(W.QDialog):
             self.pair_btn.setText(T("Tentar de novo"))
         else:
             self.pair_text.setText(T("Para usar outro mouse ou teclado com este receptor, clique em Parear novo "
-                                     "aparelho e depois ligue o aparelho."))
+                                     "aparelho e siga os passos."))
 
     # ------------------------------------------------------------ ações
 
