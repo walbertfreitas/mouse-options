@@ -104,7 +104,10 @@ class VirtualInput:
         keys = list(range(e.KEY_ESC, e.KEY_MICMUTE + 1)) + list(BUTTONS.values())
         self.ui = UInput({e.EV_KEY: sorted(set(keys)),
                           e.EV_REL: [e.REL_X, e.REL_Y, e.REL_WHEEL, e.REL_HWHEEL, e.REL_WHEEL_HI_RES,
-                                     e.REL_HWHEEL_HI_RES]}, name=self.NAME)
+                                     e.REL_HWHEEL_HI_RES]}, name=self.NAME,
+                          # virtual, não USB: o libinput trata mouse USB/Bluetooth como "mouse externo", e o modo
+                          # "desligar o touchpad com mouse externo" do GNOME deixaria o touchpad sempre desligado
+                          bustype=e.BUS_VIRTUAL)
         self._layout = None
         self._keymap: Keymap | None = None
 
