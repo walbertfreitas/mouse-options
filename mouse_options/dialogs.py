@@ -11,6 +11,16 @@ from .qt import QtCore, QtGui, QtWidgets
 Qt = QtCore.Qt
 W = QtWidgets
 INHERIT = {"id": "__inherit__"}  # "usar a configuração de Todos os aplicativos"
+BUTTON_TEXTS = {"Ok": "OK", "Cancel": "Cancelar", "Close": "Fechar"}
+
+
+def button_box(*names: str) -> W.QDialogButtonBox:
+    """Botões padrão com o texto no idioma do app (sem isso, dependem do tema do sistema e às vezes ficam em
+    inglês)."""
+    box = W.QDialogButtonBox()
+    for name in names:
+        box.addButton(getattr(W.QDialogButtonBox.StandardButton, name)).setText(T(BUTTON_TEXTS[name]))
+    return box
 
 
 def app_icon(name: str) -> QtGui.QIcon:
@@ -52,7 +62,7 @@ class KeyCaptureDialog(W.QDialog):
         self.show_keys = W.QLabel("…", objectName="bigkeys", alignment=Qt.AlignmentFlag.AlignCenter)
         self.show_keys.setMinimumHeight(60)
         lay.addWidget(self.show_keys)
-        buttons = W.QDialogButtonBox(W.QDialogButtonBox.StandardButton.Ok | W.QDialogButtonBox.StandardButton.Cancel)
+        buttons = button_box("Ok", "Cancel")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         self.ok = buttons.button(W.QDialogButtonBox.StandardButton.Ok)
@@ -106,7 +116,7 @@ class AppPickerDialog(W.QDialog):
         self.list.setIconSize(QtCore.QSize(24, 24))
         self.list.itemDoubleClicked.connect(lambda _i: self._accept())
         lay.addWidget(self.list)
-        buttons = W.QDialogButtonBox(W.QDialogButtonBox.StandardButton.Ok | W.QDialogButtonBox.StandardButton.Cancel)
+        buttons = button_box("Ok", "Cancel")
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
         lay.addWidget(buttons)
@@ -184,7 +194,7 @@ class ActionPickerDialog(W.QDialog):
         self.cats.currentRowChanged.connect(lambda _r: self._refill())
         self.cats.setCurrentRow(self._initial_row())
 
-        buttons = W.QDialogButtonBox(W.QDialogButtonBox.StandardButton.Ok | W.QDialogButtonBox.StandardButton.Cancel)
+        buttons = button_box("Ok", "Cancel")
         buttons.accepted.connect(self._choose)
         buttons.rejected.connect(self.reject)
         lay.addWidget(buttons)
@@ -287,7 +297,7 @@ class GestureDialog(W.QDialog):
             grid.addWidget(btn, row, 2)
             self.labels[key] = value
         lay.addLayout(grid)
-        buttons = W.QDialogButtonBox(W.QDialogButtonBox.StandardButton.Ok | W.QDialogButtonBox.StandardButton.Cancel)
+        buttons = button_box("Ok", "Cancel")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         lay.addWidget(buttons)

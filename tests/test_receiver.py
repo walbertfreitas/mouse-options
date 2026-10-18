@@ -44,7 +44,8 @@ def lock(open_, error=0):
 
 
 def link(slot, wpid, online=True):
-    return Message(0x10, slot, 0x41, 0x04 | (0 if online else 0x40), bytes([0x00]) + bytes.fromhex(wpid)[::-1])
+    # como o M720 mandou de verdade: 01 41 04 625e40 (sem ligação) e 01 41 04 a25e40 (ligado)
+    return Message(0x10, slot, 0x41, 0x04, bytes([0xA2 if online else 0x62]) + bytes.fromhex(wpid)[::-1])
 
 
 class ReceiverTest(unittest.TestCase):
@@ -107,8 +108,9 @@ class PairingFlowTest(unittest.TestCase):
         self.m._receiver_event("/dev/hidraw0", lock(True))
         self.assertTrue(self.rs.pairing["open"])
         self.fake.devices[2] = ("4082", 2, "MX Anywhere 3")             # o aparelho aceitou
-        self.m._receiver_event("/dev/hidraw0", link(2, "4082"))
+        self.m._receiver_event("/dev/hidraw0", link(2, "4082", online=False))   # ordem real do receptor
         self.m._receiver_event("/dev/hidraw0", lock(False))
+        self.m._receiver_event("/dev/hidraw0", link(2, "4082"))
         self.assertEqual(self.rs.pairing, {"open": False, "error": None, "new": "4082"})
         self.assertIn((2, "MX Anywhere 3"), [(d["slot"], d["name"]) for d in self.m.receivers_info()[0]["devices"]])
 
@@ -127,6 +129,23 @@ class PairingFlowTest(unittest.TestCase):
         self.fake.register = unpair_write
         self.m.unpair("/dev/hidraw0", 3)
         self.assertEqual([d["slot"] for d in self.m.receivers_info()[0]["devices"]], [1])
+
+    def test_link_lost_on_device_hidraw(self):
+        """Bytes reais: o M720 foi para o Bluetooth (01 41 04 625e40) e voltou ao receptor (01 41 04 a25e40)."""
+        from mouse_options.daemon.manager import Session
+        reapplied = []
+        self.m._pool.submit = lambda fn, *args: reapplied.append(fn.__name__)
+
+        class T:
+            closed = False
+
+        self.m.sessions["/dev/hidraw2"] = Session("/dev/hidraw2", T(), None, "1A2B3C4D", {}, [], None)
+        self.m._slots["/dev/hidraw2"] = 1
+        self.m._dispatch("/dev/hidraw2", Message(0x11, 1, 0x41, 0x04, bytes.fromhex("625e40")))
+        self.assertNotIn("/dev/hidraw2", self.m.sessions)
+        self.assertIn("/dev/hidraw2", self.m._parked)
+        self.m._dispatch("/dev/hidraw2", Message(0x11, 1, 0x41, 0x04, bytes.fromhex("a25e40")))
+        self.assertEqual(reapplied, ["_open"])   # voltou: abre de novo
 
     def test_bolt_refuses_pairing(self):
         self.rs.receiver = rx.Receiver(self.fake, 0xC548)

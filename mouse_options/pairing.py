@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .client import ServiceUnavailable
+from .dialogs import button_box
 from .hidpp.receiver import PAIR_TIMEOUT
 from .i18n import T
 from .qt import QtCore, QtWidgets
@@ -75,7 +76,7 @@ class ReceiverDialog(W.QDialog):
         lay.addWidget(self.pair_panel)
         lay.addStretch(1)
 
-        close = W.QDialogButtonBox(W.QDialogButtonBox.StandardButton.Close)
+        close = button_box("Close")
         close.rejected.connect(self.reject)
         lay.addWidget(close)
 
@@ -239,7 +240,8 @@ class ReceiverDialog(W.QDialog):
 
     def done(self, result):  # noqa: D401 — fechar a janela com o receptor aberto: fecha o receptor
         r = self.receiver
-        if r and (self.waiting or r["pairing"]["open"]):
+        state = r["pairing"] if r else {}
+        if r and (state["open"] or (self.waiting and not state["new"] and not state["error"])):
             try:
                 self.client.stop_pairing(r["path"])
             except ServiceUnavailable:

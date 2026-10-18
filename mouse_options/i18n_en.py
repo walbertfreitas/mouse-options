@@ -19,6 +19,8 @@ EN: dict[str, str] = {
     "Clique num botão (no desenho ou na lista) para escolher o que ele faz em {where}.":
         "Click a button (on the picture or in the list) to choose what it does in {where}.",
     "igual a Todos os aplicativos": "same as All applications",
+    'Fechar': 'Close',
+    'OK': 'OK',
     'Com Easy-Switch: aperte o botão até acender o canal desejado e segure-o até a luz piscar rápido.':
         'With Easy-Switch: press the button until the channel you want lights up, then hold it until the light blinks fast.',
     '<b>Desligue e ligue o aparelho</b> pela chave liga/desliga.':

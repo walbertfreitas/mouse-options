@@ -431,8 +431,8 @@ class Manager:
                      f" ({event.error})" if event.error else "")
             self._receivers_changed()
         elif isinstance(event, LinkEvent):
-            if rs.pairing["open"] and event.online:
-                rs.pairing["new"] = event.wpid   # com o receptor aberto: é o aparelho que acabou de parear
+            if rs.pairing["open"]:   # com o receptor aberto: é o aparelho que acabou de parear (o 1º aviso
+                rs.pairing["new"] = event.wpid   # dele ainda vem como "sem ligação")
             self._pool.submit(self._refresh_receiver, rs)
             # logo depois de parear o receptor fica ocupado com o aparelho novo: lê de novo daqui a pouco
             GLib.timeout_add(2000, lambda: self._pool.submit(self._refresh_receiver, rs) and False)
@@ -502,7 +502,7 @@ class Manager:
 
     def _dispatch(self, path: str, msg) -> bool:
         if msg.sub_id == 0x41 and msg.index in RECEIVER_SLOTS:   # receptor: aparelho conectou/desconectou
-            self._link_changed(path, online=not msg.address & 0x40)
+            self._link_changed(path, online=not msg.data[0] & 0x40)   # bit 0x40 do 1º byte: ligação perdida
             return False
         if path in self._parked:
             if msg.index == self._slots.get(path) and msg.sub_id < 0x80:   # o aparelho voltou a falar

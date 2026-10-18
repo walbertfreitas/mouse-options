@@ -4,7 +4,8 @@ Receptores falam HID++ 1.0 por registradores, sempre no número de aparelho 0xFF
     0xB2 (escrita curta)  pareamento: [0x01, 0, tempo] abre, [0x02, 0, 0] fecha, [0x03, posição, 0] despareia
     0xB5 (leitura longa)  informações: 0x03 receptor (série em [1:5], máximo de aparelhos em [6]),
                           0x20+n-1 aparelho n (wpid em [3:5], tipo em [7] & 0x0F), 0x40+n-1 nome de n
-Notificações: 0x4A = cadeado de pareamento aberto/fechado (com erro), 0x41 = aparelho conectou/desconectou.
+Notificações: 0x4A = cadeado de pareamento aberto/fechado (com erro), 0x41 = aparelho conectou/desconectou
+(ligação perdida = bit 0x40 do primeiro byte de dados; o endereço é o protocolo).
 O Bolt pareia de outro jeito (descoberta + senha); por enquanto só listamos os aparelhos dele.
 """
 from __future__ import annotations
@@ -120,5 +121,6 @@ class Receiver:
             code = msg.data[0] if msg.data else 0
             return LockEvent(bool(msg.address & 0x01), PAIRING_ERRORS.get(code, "failed") if code else None)
         if msg.sub_id == LINK_NOTIFICATION and msg.index in SLOTS:
-            return LinkEvent(msg.index, msg.data[1:3][::-1].hex().upper(), not msg.address & 0x40)
+            # o endereço diz o protocolo (0x04 Unifying, 0x10 Bolt…); a ligação está no bit 0x40 do 1º byte
+            return LinkEvent(msg.index, msg.data[1:3][::-1].hex().upper(), not msg.data[0] & 0x40)
         return None
