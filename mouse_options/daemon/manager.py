@@ -20,6 +20,7 @@ import pyudev
 from gi.repository import GLib
 
 from ..hidpp import device as hd
+from ..hidpp.receiver import LinkEvent, LockEvent, Receiver
 from ..hidpp.transport import HidppError, Timeout, Transport
 from ..store import Store
 from .engine import GESTURES, REGULAR, ButtonEngine
@@ -63,11 +64,26 @@ class Session:
         return {c.cid: c.name for c in self.controls if c.divertable and not c.virtual}
 
 
+class ReceiverSession:
+    """Um receptor conectado: quem está pareado nele e o andamento de um pareamento."""
+
+    def __init__(self, path: str, transport: Transport, receiver: Receiver, hid_path: str):
+        self.path, self.transport, self.receiver, self.hid_path = path, transport, receiver, hid_path
+        self.serial, self.slots = "", 6
+        self.paired: list = []
+        self.pairing = {"open": False, "error": None, "new": None}
+        self.lock = threading.Lock()
+
+
 class Manager:
     def __init__(self, runner, focus, on_changed: Callable[[], None], on_pressed: Callable[[str, int], None],
-                 store_path: str | None = None, state: State | None = None):
+                 store_path: str | None = None, state: State | None = None,
+                 on_receivers: Callable[[], None] | None = None):
         self.runner, self.focus = runner, focus
         self.on_changed, self.on_pressed = on_changed, on_pressed
+        self.on_receivers = on_receivers or (lambda: None)
+        self.receivers: dict[str, ReceiverSession] = {}   # caminho do hidraw do receptor → sessão
+        self._hid_paths: dict[str, str] = {}               # hidraw de aparelho → pasta do aparelho no sysfs
         self.store_path = store_path
         self.store = self._load_store()
         self.state = state or State()
@@ -99,6 +115,17 @@ class Manager:
         return True
 
     @staticmethod
+    def _hid_ids(d) -> tuple:
+        hid = d.find_parent("hid")
+        if hid is None:
+            return None, 0, 0
+        try:
+            _bus, vendor, product = (int(x, 16) for x in hid.properties.get("HID_ID", "").split(":"))
+        except ValueError:
+            return hid, 0, 0
+        return hid, vendor, product
+
+    @staticmethod
     def _is_candidate(d) -> bool:
         hid = d.find_parent("hid")
         if hid is None:
@@ -114,8 +141,16 @@ class Manager:
     def _consider(self, d) -> None:
         path = d.device_node
         if not path or path in self.sessions or path in self._opening or path in self._parked \
-                or not self._is_candidate(d):
+                or path in self.receivers:
             return
+        hid, vendor, product = self._hid_ids(d)
+        if hid is not None and vendor == LOGITECH and hid.driver == "logitech-djreceiver":
+            self._opening.add(path)
+            self._pool.submit(self._open_receiver, path, product, hid.sys_path)
+            return
+        if not self._is_candidate(d):
+            return
+        self._hid_paths[path] = d.find_parent("hid").sys_path
         slot = self._receiver_slot(d)
         if slot is not None:
             self._slots[path] = slot
@@ -145,7 +180,13 @@ class Manager:
         if transport is None:
             transport = Transport(path, on_notification=lambda m: GLib.idle_add(self._dispatch, path, m),
                                   on_close=lambda: GLib.idle_add(self._closed, path))
+        steps = []   # tempo de cada etapa, para o log
+
+        def step(label):
+            steps.append(f"{label} {(time.monotonic() - started) * 1000:.0f}")
+
         dev = self._find_device(transport, slot)
+        step("ping")
         if dev is None:
             if slot is not None:   # pareado com o receptor, mas desligado/em outro canal: espera conectar
                 GLib.idle_add(self._park, path, transport)
@@ -153,7 +194,9 @@ class Manager:
                 transport.close()
             return
         ids = dev.ids()
+        step("ids")
         identity = self._identify(dev, ids)
+        step("botões")
         if identity is None:
             transport.close()
             return
@@ -188,6 +231,7 @@ class Manager:
         self._on_main(register)
         self._apply(session)
         log.info("%s pronto em %.0f ms (%s, %s)", name, (time.monotonic() - started) * 1000, key, path)
+        log.debug("etapas (ms acumulados): %s", ", ".join(steps))
         GLib.idle_add(self.on_changed)
         self._complete(session)
 
@@ -199,8 +243,9 @@ class Manager:
     def _find_device(self, transport: Transport, slot: int | None = None) -> hd.Device | None:
         for index in ((slot,) if slot is not None else (0xFF, *RECEIVER_SLOTS)):
             candidate = hd.Device(transport, index)
-            for _ in range(3):   # recém-conectado às vezes demora a responder
-                if candidate.ping(timeout=0.6):
+            # recém-conectado às vezes perde o primeiro pedido: tenta de novo logo, esperando mais a cada vez
+            for timeout in (0.25, 0.5, 1.0):
+                if candidate.ping(timeout=timeout):
                     return candidate if candidate.protocol[0] >= 2 else None
         return None
 
@@ -335,6 +380,120 @@ class Manager:
             if hires is not None:
                 s.info["smooth_scroll"] = hires
 
+    # ------------------------------------------------------------------ receptores
+
+    def _open_receiver(self, path: str, product: int, hid_path: str) -> None:
+        try:
+            transport = Transport(path, on_notification=lambda m: GLib.idle_add(self._receiver_event, path, m),
+                                  on_close=lambda: GLib.idle_add(self._receiver_closed, path))
+            if not transport.reports:   # o receptor tem várias interfaces; só uma fala HID++
+                transport.close()
+                return
+            rs = ReceiverSession(path, transport, Receiver(transport, product), hid_path)
+            self._refresh_receiver(rs)
+            self._on_main(lambda: self.receivers.__setitem__(path, rs))
+            log.info("receptor %s (%04X, série %s) em %s: %d aparelho(s) pareado(s)", rs.receiver.kind, product,
+                     rs.serial or "?", path, len(rs.paired))
+            GLib.idle_add(self._receivers_changed)
+        except Exception:  # noqa: BLE001
+            log.exception("não foi possível abrir o receptor %s", path)
+        finally:
+            GLib.idle_add(self._opening.discard, path)
+
+    def _refresh_receiver(self, rs: ReceiverSession) -> None:
+        with rs.lock:
+            serial, slots = rs.receiver.info()
+            try:
+                paired = rs.receiver.paired(slots)
+            except Timeout:
+                return
+
+        def update():
+            rs.serial, rs.slots, rs.paired = serial, slots, paired
+            self._receivers_changed()
+        self._on_main(update)
+
+    def _receivers_changed(self) -> bool:
+        self.on_receivers()
+        return False
+
+    def _receiver_event(self, path: str, msg) -> bool:
+        rs = self.receivers.get(path)
+        event = Receiver.parse(msg) if rs else None
+        if isinstance(event, LockEvent):
+            if event.open:
+                rs.pairing = {"open": True, "error": None, "new": None}
+            else:
+                rs.pairing.update(open=False, error=event.error)
+            log.info("receptor %s: pareamento %s%s", path, "aberto" if event.open else "fechado",
+                     f" ({event.error})" if event.error else "")
+            self._receivers_changed()
+        elif isinstance(event, LinkEvent):
+            if rs.pairing["open"] and event.online:
+                rs.pairing["new"] = event.wpid   # com o receptor aberto: é o aparelho que acabou de parear
+            self._pool.submit(self._refresh_receiver, rs)
+        elif msg.sub_id == 0x40 and msg.index in RECEIVER_SLOTS and rs:   # aparelho despareado
+            self._pool.submit(self._refresh_receiver, rs)
+        return False
+
+    def _receiver_closed(self, path: str) -> bool:
+        if self.receivers.pop(path, None):
+            log.info("receptor %s removido", path)
+            self._receivers_changed()
+        return False
+
+    def receivers_info(self) -> list[dict]:
+        out = []
+        for rs in self.receivers.values():
+            devices = []
+            for p in rs.paired:
+                session = next((s for path, s in self.sessions.items() if self._slots.get(path) == p.slot
+                                and self._hid_paths.get(path, "").startswith(rs.hid_path + "/")), None)
+                devices.append({"slot": p.slot, "wpid": p.wpid, "kind": p.kind, "online": session is not None,
+                                "name": session.info["codename"] if session else (p.name or p.wpid)})
+            out.append({"path": rs.path, "kind": rs.receiver.kind, "product": f"{rs.receiver.product_id:04X}",
+                        "serial": rs.serial, "slots": rs.slots, "can_pair": rs.receiver.can_pair,
+                        "devices": devices, "pairing": dict(rs.pairing)})
+        return out
+
+    def _receiver_call(self, path: str, action) -> None:
+        rs = self.receivers.get(path)
+        if rs is None:
+            raise KeyError(f"receptor {path} não encontrado")
+
+        def run():
+            with rs.lock:
+                try:
+                    action(rs.receiver)
+                except (HidppError, Timeout) as e:
+                    log.warning("receptor %s: %s", path, e)
+
+                    def failed():
+                        rs.pairing.update(open=False, error="failed")
+                        self._receivers_changed()
+                    GLib.idle_add(lambda: failed() or False)
+        self._pool.submit(run)
+
+    def start_pairing(self, path: str) -> None:
+        rs = self.receivers.get(path)
+        if rs is not None and not rs.receiver.can_pair:
+            raise ValueError("este receptor ainda não pode parear pelo Mouse Options")
+        if rs is not None:
+            rs.pairing = {"open": False, "error": None, "new": None}
+        self._receiver_call(path, lambda r: r.open_lock())
+
+    def stop_pairing(self, path: str) -> None:
+        self._receiver_call(path, lambda r: r.close_lock())
+
+    def unpair(self, path: str, slot: int) -> None:
+        def run(r):
+            r.unpair(slot)
+            log.info("receptor %s: aparelho da posição %d despareado", path, slot)
+        self._receiver_call(path, run)
+        rs = self.receivers.get(path)
+        if rs:
+            self._pool.submit(self._refresh_receiver, rs)
+
     # ------------------------------------------------------------------ eventos (laço principal)
 
     def _dispatch(self, path: str, msg) -> bool:
@@ -379,6 +538,7 @@ class Manager:
     def _closed(self, path: str) -> bool:
         self._parked.pop(path, None)
         self._slots.pop(path, None)
+        self._hid_paths.pop(path, None)
         s = self.sessions.pop(path, None)
         if s:
             log.info("%s desconectado", s.key)
@@ -438,6 +598,13 @@ class Manager:
             s.transport.close()
         for t in self._parked.values():
             t.close()
+        for rs in list(self.receivers.values()):
+            if rs.pairing["open"]:
+                try:
+                    rs.receiver.close_lock()
+                except (HidppError, Timeout):
+                    pass
+            rs.transport.close()
         self._pool.shutdown(wait=False)
 
 

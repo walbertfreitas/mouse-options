@@ -355,6 +355,7 @@ class MainWindow(W.QMainWindow):
         self.client = DaemonClient(self)
         self.client.devices_changed.connect(self._on_discovered)
         self.client.button_pressed.connect(self._on_mouse_button)
+        self.client.receivers_changed.connect(self._on_receivers)
         W.QApplication.instance().installEventFilter(self)
         self.apply_timer = QtCore.QTimer(self, singleShot=True, interval=600, timeout=self._apply_now)
 
@@ -393,11 +394,14 @@ class MainWindow(W.QMainWindow):
         self.device_combo = W.QComboBox(minimumWidth=220)
         self.device_combo.currentIndexChanged.connect(self._select_device)
         self.refresh_btn = W.QPushButton(clicked=self._discover)
+        self.receiver_btn = W.QPushButton(clicked=self._open_receivers, visible=False)
+        self.receivers: list[dict] = []
         top.addWidget(self.device_name)
         top.addSpacing(10)
         top.addWidget(self.battery, alignment=Qt.AlignmentFlag.AlignVCenter)
         top.addStretch(1)
         top.addWidget(self.device_combo)
+        top.addWidget(self.receiver_btn)
         top.addWidget(self.refresh_btn)
         outer.addLayout(top)
 
@@ -561,6 +565,8 @@ class MainWindow(W.QMainWindow):
 
     def _retranslate(self):
         self.refresh_btn.setText(T("Procurar mouses"))
+        self.receiver_btn.setText(T("Receptor"))
+        self.receiver_btn.setToolTip(T("Aparelhos pareados no receptor USB e pareamento de aparelhos novos"))
         self.tabs.setTabText(0, T("Botões"))
         self.tabs.setTabText(1, T("Ponteiro e rolagem").replace("&", "&&"))
         self.tabs.setTabText(2, T("Easy-Switch"))
@@ -599,10 +605,19 @@ class MainWindow(W.QMainWindow):
         self._msg("Procurando mouses Logitech…")
         try:
             mice = self.client.devices()
+            self._on_receivers(self.client.receivers())
         except ServiceUnavailable as e:
             self._msg("O serviço do Mouse Options não respondeu: {msg}", msg=str(e))
             return
         self._on_discovered(mice)
+
+    def _on_receivers(self, receivers):
+        self.receivers = receivers
+        self.receiver_btn.setVisible(bool(receivers))
+
+    def _open_receivers(self):
+        from .pairing import ReceiverDialog
+        ReceiverDialog(self, self.client, self.receivers).exec()
 
     def _on_discovered(self, mice):
         """Lista vinda do serviço (ele também manda os mouses conhecidos que estão desconectados)."""
@@ -632,7 +647,11 @@ class MainWindow(W.QMainWindow):
             self._select_device(index, keep_app=previous == keys[index])
         else:
             self.current = None
-            self._msg("Nenhum mouse Logitech encontrado. Ligue o mouse e clique em Procurar mouses.")
+            if self.receivers:
+                self._msg("Nenhum mouse Logitech encontrado. Se o mouse usa o receptor USB, clique em Receptor "
+                          "para pareá-lo.")
+            else:
+                self._msg("Nenhum mouse Logitech encontrado. Ligue o mouse e clique em Procurar mouses.")
             self._refresh_all()
 
     def _select_device(self, index, keep_app=False):

@@ -15,12 +15,14 @@ class ServiceUnavailable(Exception):
 class DaemonClient(QtCore.QObject):
     devices_changed = Signal(list)       # list[MouseInfo]
     button_pressed = Signal(str, int)    # chave do mouse, CID
+    receivers_changed = Signal(list)     # list[dict] (ver Manager.receivers_info)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.bus = QtDBus.QDBusConnection.sessionBus()
         self.bus.connect(BUS_NAME, OBJECT_PATH, INTERFACE, "DevicesChanged", self._on_changed)
         self.bus.connect(BUS_NAME, OBJECT_PATH, INTERFACE, "ButtonPressed", self._on_pressed)
+        self.bus.connect(BUS_NAME, OBJECT_PATH, INTERFACE, "ReceiversChanged", self._on_receivers)
 
     def _call(self, method: str, *args, timeout: int = 8000):
         msg = QtDBus.QDBusMessage.createMethodCall(BUS_NAME, OBJECT_PATH, INTERFACE, method)
@@ -43,6 +45,22 @@ class DaemonClient(QtCore.QObject):
 
     def set_host(self, key: str, host: int) -> None:
         self._call("SetHost", key, host)
+
+    def receivers(self) -> list[dict]:
+        return json.loads(self._call("GetReceivers")[0])
+
+    def start_pairing(self, receiver: str) -> None:
+        self._call("StartPairing", receiver)
+
+    def stop_pairing(self, receiver: str) -> None:
+        self._call("StopPairing", receiver)
+
+    def unpair(self, receiver: str, slot: int) -> None:
+        self._call("Unpair", receiver, slot)
+
+    @Slot(QtDBus.QDBusMessage)
+    def _on_receivers(self, msg):
+        self.receivers_changed.emit(json.loads(msg.arguments()[0]))
 
     @Slot(QtDBus.QDBusMessage)
     def _on_changed(self, msg):

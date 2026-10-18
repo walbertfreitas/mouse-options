@@ -19,6 +19,82 @@ EN: dict[str, str] = {
     "Clique num botão (no desenho ou na lista) para escolher o que ele faz em {where}.":
         "Click a button (on the picture or in the list) to choose what it does in {where}.",
     "igual a Todos os aplicativos": "same as All applications",
+    'Aparelho':
+        'Device',
+    'Aparelhos pareados no receptor USB e pareamento de aparelhos novos':
+        'Devices paired with the USB receiver, and pairing new ones',
+    'Apresentador':
+        'Presenter',
+    'Cancelar':
+        'Cancel',
+    'Conectado':
+        'Connected',
+    'Controle remoto':
+        'Remote control',
+    'Desligado':
+        'Off',
+    'Desparear':
+        'Unpair',
+    'Desparear {name} deste receptor? Para usar o aparelho com o receptor de novo, será preciso pareá-lo outra vez.':
+        'Unpair {name} from this receiver? To use it with the receiver again, you will need to pair it again.',
+    'Ele já está pronto para usar e configurar no Mouse Options.':
+        'It is ready to use and to set up in Mouse Options.',
+    'Esperando o aparelho…':
+        'Waiting for the device…',
+    'Este aparelho não é compatível com o receptor Unifying.':
+        'This device is not compatible with the Unifying receiver.',
+    'Headset':
+        'Headset',
+    'Ligue o aparelho que você quer parear (se já estiver ligado, desligue e ligue de novo). Em aparelhos com Easy-Switch, escolha um canal e segure o botão dele até a luz piscar rápido.':
+        'Turn on the device you want to pair (if it is already on, turn it off and on again). On devices with Easy-Switch, pick a channel and hold its button until the light blinks fast.',
+    'Mouse':
+        'Mouse',
+    'Nenhum aparelho apareceu a tempo. Tente de novo: ligue o aparelho logo depois de clicar em Parear novo aparelho.':
+        'No device showed up in time. Try again: turn the device on right after clicking Pair new device.',
+    'Nenhum aparelho pareado com este receptor.':
+        'No devices paired with this receiver.',
+    'Nenhum receptor conectado. Coloque o receptor USB no computador.':
+        'No receiver connected. Plug the USB receiver into the computer.',
+    'Não deu para parear.':
+        'Pairing failed.',
+    'O receptor está cheio. Despareie um aparelho para liberar espaço.':
+        'The receiver is full. Unpair a device to make room.',
+    'O receptor não aceitou o pedido. Tire e coloque o receptor de novo e tente outra vez.':
+        'The receiver did not accept the request. Unplug and replug the receiver and try again.',
+    'Para usar outro mouse ou teclado com este receptor, clique em Parear novo aparelho e depois ligue o aparelho.':
+        'To use another mouse or keyboard with this receiver, click Pair new device and then turn the device on.',
+    'Parear novo aparelho':
+        'Pair new device',
+    'Parear outro aparelho':
+        'Pair another device',
+    'Parear pelo {receiver} ainda não está disponível no Mouse Options. Os aparelhos já pareados com ele funcionam normalmente.':
+        'Pairing with the {receiver} is not available in Mouse Options yet. Devices already paired with it work normally.',
+    'Receptor':
+        'Receiver',
+    'Receptor Bolt':
+        'Bolt receiver',
+    'Receptor Logitech':
+        'Logitech receiver',
+    'Receptor Unifying':
+        'Unifying receiver',
+    'Série {serial} · {used} de {slots} posições em uso':
+        'Serial {serial} · {used} of {slots} slots in use',
+    'Teclado':
+        'Keyboard',
+    'Teclado numérico':
+        'Numpad',
+    'Tentar de novo':
+        'Try again',
+    'Touchpad':
+        'Touchpad',
+    'Trackball':
+        'Trackball',
+    '{kind} · posição {slot}':
+        '{kind} · slot {slot}',
+    '{name} pareado!':
+        '{name} paired!',
+    'Nenhum mouse Logitech encontrado. Se o mouse usa o receptor USB, clique em Receptor para pareá-lo.':
+        'No Logitech mouse found. If the mouse uses the USB receiver, click Receiver to pair it.',
     "O Solaar está aberto. Ele e o Mouse Options controlam os botões do mouse ao mesmo tempo e um atrapalha o outro.\n\nFechar o Solaar e impedir que ele inicie com o computador? (Dá para desfazer apagando ~/.config/autostart/solaar.desktop.)":
         "Solaar is running. It and Mouse Options both control the mouse buttons and get in each other's way.\n\nClose Solaar and stop it from starting with the computer? (Undo by deleting ~/.config/autostart/solaar.desktop.)",
     "Igual a Todos os aplicativos": "Same as All applications",

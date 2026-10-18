@@ -24,6 +24,8 @@ Easy-Switch — tudo numa janela só, com as mudanças valendo na hora.
   suave (alta resolução), SmartShift (quando a roda passa a girar solta) e direção da roda do polegar. Só
   aparecem os ajustes que o seu mouse tem.
 - **Easy-Switch** — veja o nome dos computadores pareados e troque de canal pelo app.
+- **Receptor Unifying** — veja o que está pareado, pareie um mouse ou teclado novo e despareie, pelo próprio
+  app.
 - **Rápido e fluido** — serviço HID++ próprio, que conversa direto com o mouse (sem precisar do Solaar). Os
   botões ficam prontos ~0,2–0,4 s depois que o mouse conecta, e as ações usam chamadas diretas ao sistema
   (D-Bus, PipeWire, GNOME Shell) em vez de simular teclas sempre que dá, evitando as travadinhas que teclas
@@ -117,9 +119,8 @@ Ideias em que a ajuda é muito bem-vinda:
 - **Teclados (MX Keys e companhia):** teclas F e de mídia, inverter o Fn, luz das teclas, Easy-Switch. A
   camada HID++ (`mouse_options/hidpp/`) já fala o protocolo; hoje o serviço pula aparelhos que não são de
   apontar (`POINTING` em `daemon/manager.py`).
-- **Parear pelo app:** um botão "parear novo aparelho" para receptores Unifying e Bolt (parear um mouse
-  num receptor Unifying pelos registradores HID++ 1.0 já foi feito à mão; falta a tela), e testes com
-  receptores Bolt.
+- **Receptores Bolt:** parear e desparear pelo app (no Unifying já funciona; o Bolt usa outro fluxo, com
+  senha) e testes em geral.
 - **Apresentadores** (Spotlight), **mais idiomas**, **pacotes** para Fedora/Arch/Flatpak.
 
 ### Desenvolvimento

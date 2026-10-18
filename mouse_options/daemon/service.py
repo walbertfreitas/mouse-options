@@ -5,7 +5,8 @@ A interface gráfica conversa com ele pelo barramento da sessão:
     Reload()                     o config.json mudou: reconfigura os botões
     SetSettings(chave, JSON)     velocidade do ponteiro, rolagem…: aplica na hora e guarda
     SetHost(chave, canal)        Easy-Switch
-    sinais DevicesChanged(JSON) e ButtonPressed(chave, cid)
+    GetReceivers() / StartPairing(receptor) / StopPairing(receptor) / Unpair(receptor, posição)
+    sinais DevicesChanged(JSON), ReceiversChanged(JSON) e ButtonPressed(chave, cid)
 """
 from __future__ import annotations
 
@@ -36,7 +37,14 @@ INTROSPECTION = f"""
     </method>
     <method name="SetFocus"><arg type="as" name="names" direction="in"/></method>
     <method name="ClearFocus"/>
+    <method name="GetReceivers"><arg type="s" name="receivers" direction="out"/></method>
+    <method name="StartPairing"><arg type="s" name="receiver" direction="in"/></method>
+    <method name="StopPairing"><arg type="s" name="receiver" direction="in"/></method>
+    <method name="Unpair">
+      <arg type="s" name="receiver" direction="in"/><arg type="i" name="slot" direction="in"/>
+    </method>
     <signal name="DevicesChanged"><arg type="s" name="devices"/></signal>
+    <signal name="ReceiversChanged"><arg type="s" name="receivers"/></signal>
     <signal name="ButtonPressed"><arg type="s" name="key"/><arg type="u" name="cid"/></signal>
   </interface>
 </node>
@@ -55,7 +63,8 @@ class Service:
             from .vinput import VirtualInput
             factory = VirtualInput
         self.runner = Runner(factory)
-        self.manager = Manager(self.runner, self.focus, self._changed, self._pressed)
+        self.manager = Manager(self.runner, self.focus, self._changed, self._pressed,
+                               on_receivers=self._receivers_changed)
 
     # ------------------------------------------------------------------ D-Bus
 
@@ -83,12 +92,21 @@ class Service:
             if method == "GetDevices":
                 invocation.return_value(GLib.Variant("(s)", (json.dumps(self.manager.devices()),)))
                 return
+            if method == "GetReceivers":
+                invocation.return_value(GLib.Variant("(s)", (json.dumps(self.manager.receivers_info()),)))
+                return
             if method == "Reload":
                 self.manager.reload()
             elif method == "SetSettings":
                 self.manager.set_settings(args[0], json.loads(args[1]))
             elif method == "SetHost":
                 self.manager.set_host(args[0], args[1])
+            elif method == "StartPairing":   # receptor aberto para um aparelho novo (60 s)
+                self.manager.start_pairing(args[0])
+            elif method == "StopPairing":
+                self.manager.stop_pairing(args[0])
+            elif method == "Unpair":
+                self.manager.unpair(args[0], args[1])
             elif method == "SetFocus":      # a extensão do GNOME avisa quem está em foco
                 self.focus.external = list(args[0])
             elif method == "ClearFocus":    # extensão desligada: volta a descobrir sozinho (X11)
@@ -105,6 +123,9 @@ class Service:
     def _changed(self):
         self._emit("DevicesChanged", "(s)", (json.dumps(self.manager.devices()),))
         return False
+
+    def _receivers_changed(self):
+        self._emit("ReceiversChanged", "(s)", (json.dumps(self.manager.receivers_info()),))
 
     def _pressed(self, key: str, cid: int):
         self._emit("ButtonPressed", "(su)", (key, cid))

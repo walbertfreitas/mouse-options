@@ -24,6 +24,7 @@ between computers with Easy-Switch — all from one window, with changes applied
   scrolling, SmartShift (when the wheel unlocks to free-spin) and thumb-wheel direction. Only the settings
   your mouse actually has are shown.
 - **Easy-Switch** — see the names of the paired computers and switch channel from the app.
+- **Unifying receiver** — see what is paired, pair a new mouse or keyboard and unpair, right from the app.
 - **Fast and smooth** — its own HID++ service talks directly to the mouse (no Solaar needed). Buttons are
   ready ~0.2–0.4 s after the mouse connects, and actions use direct system calls (D-Bus, PipeWire, GNOME
   Shell) instead of fake keystrokes whenever possible, avoiding the stutters that simulated keys cause.
@@ -116,9 +117,8 @@ devices. Ideas where help is very welcome:
 - **Keyboards (MX Keys and friends):** F-keys and media keys, Fn inversion, backlight, Easy-Switch. The
   HID++ layer (`mouse_options/hidpp/`) already speaks the protocol; the service currently skips devices
   that are not pointing devices (`POINTING` in `daemon/manager.py`).
-- **Pairing from the app:** a "pair new device" button for Unifying and Bolt receivers (pairing a mouse
-  to a Unifying receiver through its HID++ 1.0 registers was already done by hand; it needs a UI), and
-  testing with Bolt receivers.
+- **Bolt receivers:** pairing and unpairing from the app (Unifying already works; Bolt uses a different
+  flow with a passkey), and testing in general.
 - **Presenters** (Spotlight), **more languages**, **packaging** for Fedora/Arch/Flatpak.
 
 ### Development
