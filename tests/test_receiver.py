@@ -21,7 +21,7 @@ class FakeReceiver:
         if (sub_id, register) == (rx.READ_LONG, rx.INFO):
             sub = params[0]
             if sub == 0x03:
-                return bytes([0x03]) + bytes.fromhex("279B983A") + bytes([0, 6]) + bytes(9)
+                return bytes([0x03]) + bytes.fromhex("12345678") + bytes([0, 6]) + bytes(9)
             slot = (sub & 0x0F) + 1
             if slot not in self.devices:
                 raise HidppError(0x02, protocol=1)
@@ -55,7 +55,7 @@ class ReceiverTest(unittest.TestCase):
     def test_info_and_paired(self):
         self.assertEqual(self.r.kind, "unifying")
         self.assertTrue(self.r.can_pair)
-        self.assertEqual(self.r.info(), ("279B983A", 6))
+        self.assertEqual(self.r.info(), ("12345678", 6))
         self.assertEqual(self.r.paired(), [rx.Paired(1, "405E", "mouse", "M720 Triathlon"),
                                            rx.Paired(3, "4075", "keyboard", "K270")])
 
@@ -97,7 +97,7 @@ class PairingFlowTest(unittest.TestCase):
         self.m._slots["/dev/hidraw3"] = 1
         self.m._hid_paths["/dev/hidraw3"] = "/sys/devices/x/0003:046D:C52B.0001/0003:046D:405E.0002"
         info = self.m.receivers_info()[0]
-        self.assertEqual((info["kind"], info["serial"], info["can_pair"]), ("unifying", "279B983A", True))
+        self.assertEqual((info["kind"], info["serial"], info["can_pair"]), ("unifying", "12345678", True))
         self.assertEqual([(d["slot"], d["name"], d["online"]) for d in info["devices"]],
                          [(1, "M720 Triathlon", True), (3, "K270", False)])
 
