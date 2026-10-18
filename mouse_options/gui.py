@@ -707,6 +707,7 @@ class MainWindow(W.QMainWindow):
         if not m:
             self.mouse_view.set_controls([])
             self.buttons_hint.setText("")
+            self.reset_btn.setVisible(False)   # sem mouse, não há perfil para restaurar
             return
         names = [c.name for c in m.controls]
         self.mouse_view.set_controls(names, f"{m.codename} {m.name}")

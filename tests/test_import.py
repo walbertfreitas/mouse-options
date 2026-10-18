@@ -58,7 +58,8 @@ class ImportFromSolaar(unittest.TestCase):
         with mock.patch.object(si, "AUTOSTART_OVERRIDE", path), mock.patch.object(si, "solaar_running", lambda: []):
             self.assertTrue(si.disable_solaar())
             self.assertFalse(si.disable_solaar())   # já desligado
-        self.assertIn("Hidden=true", open(path).read())
+        with open(path, encoding="utf-8") as f:
+            self.assertIn("Hidden=true", f.read())
 
 
 class Catalog(unittest.TestCase):

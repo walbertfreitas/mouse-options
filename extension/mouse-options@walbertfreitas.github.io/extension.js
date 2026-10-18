@@ -37,6 +37,21 @@ const SHELL_IFACE = `
 const VOLUME_ICONS = ['audio-volume-muted-symbolic', 'audio-volume-low-symbolic',
     'audio-volume-medium-symbolic', 'audio-volume-high-symbolic', 'audio-volume-overamplified-symbolic'];
 
+// balão de volume/brilho em todos os monitores: o GNOME 49+ trocou show(-1, …) por showAll(…)
+function showOsd(iconName, level = null, maxLevel = null) {
+    // (se o balão falhar, a ação já foi feita: não pode voltar como "falhou", senão o serviço repete)
+    try {
+        const icon = Gio.ThemedIcon.new(iconName);
+        const osd = Main.osdWindowManager;
+        if (typeof osd.showAll === 'function')
+            osd.showAll(icon, null, level, maxLevel);
+        else
+            osd.show(-1, icon, null, level, maxLevel);
+    } catch (e) {
+        logError(e, 'Mouse Options: balão');
+    }
+}
+
 function readComm(pid) {
     try {
         const [ok, bytes] = GLib.file_get_contents(`/proc/${pid}/comm`);
@@ -101,7 +116,7 @@ class ShellActions {
         let n = 0;
         if (!muted && stream.volume > 0)
             n = level > 1 ? 4 : Math.min(3, Math.max(1, Math.ceil(level * 3)));
-        Main.osdWindowManager.show(-1, Gio.ThemedIcon.new(VOLUME_ICONS[n]), null, level, maxLevel);
+        showOsd(VOLUME_ICONS[n], level, maxLevel);
     }
 
     _changeVolume(direction) {
@@ -165,7 +180,7 @@ class ShellActions {
             return false;
         const muted = this._toggleMuted(source);
         const icon = muted ? 'microphone-sensitivity-muted-symbolic' : 'microphone-sensitivity-high-symbolic';
-        Main.osdWindowManager.show(-1, Gio.ThemedIcon.new(icon), null, null, null);
+        showOsd(icon);
         return true;
     }
 
@@ -176,8 +191,7 @@ class ShellActions {
                 try {
                     const [percent] = conn.call_finish(res).deepUnpack();
                     if (percent >= 0) {
-                        Main.osdWindowManager.show(-1, Gio.ThemedIcon.new('display-brightness-symbolic'), null,
-                            percent / 100, 1);
+                        showOsd('display-brightness-symbolic', percent / 100, 1);
                     }
                 } catch (e) {
                     logError(e, 'Mouse Options: brilho');
@@ -224,10 +238,16 @@ class ShellActions {
         const w = this._focused;
         if (!w || !w.can_maximize())
             return;
-        if (w.get_maximized() === Meta.MaximizeFlags.BOTH)
-            w.unmaximize(Meta.MaximizeFlags.BOTH);
-        else
-            w.maximize(Meta.MaximizeFlags.BOTH);
+        if (typeof w.get_maximized === 'function') {   // GNOME 46–48
+            if (w.get_maximized() === Meta.MaximizeFlags.BOTH)
+                w.unmaximize(Meta.MaximizeFlags.BOTH);
+            else
+                w.maximize(Meta.MaximizeFlags.BOTH);
+        } else if (w.is_maximized()) {                    // GNOME 49+
+            w.unmaximize();
+        } else {
+            w.maximize();
+        }
     }
 
     _minimize() {
