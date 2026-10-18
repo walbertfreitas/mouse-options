@@ -1,3 +1,15 @@
+mouse-options (0.1.2) unstable; urgency=medium
+
+  * Receptor Unifying no app: lista os aparelhos pareados (conectado ou
+    desligado), pareia aparelhos novos e despareia. Receptor Bolt: só a
+    lista, por enquanto.
+  * Reconexão: quando o primeiro pedido a um aparelho recém-conectado se
+    perde, a nova tentativa sai após 0,25 s (era 0,6 s).
+  * Receptor ocupado (logo depois de parear) recusava pedidos no USB:
+    agora o serviço tenta de novo.
+
+ -- Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>  Sun, 18 Oct 2026 00:30:00 -0300
+
 mouse-options (0.1.1) unstable; urgency=medium
 
   * GNOME 49/50 (Ubuntu 26.04): o aviso de volume e brilho quebrava e o
