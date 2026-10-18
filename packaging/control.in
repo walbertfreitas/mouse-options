@@ -1,0 +1,21 @@
+Package: mouse-options
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: all
+Installed-Size: @SIZE@
+Depends: python3 (>= 3.10), python3-pyqt6, python3-gi, gir1.2-glib-2.0, python3-pyudev, python3-evdev,
+ python3-xlib, python3-yaml, libxkbcommon0, libxcb-cursor0, systemd
+Recommends: wireplumber | pulseaudio-utils
+Maintainer: Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>
+Description: Configure Logitech mouse buttons easily, like Options+
+ Mouse Options is a simple, visual way to configure Logitech mice on Linux:
+ click a button on the picture of the mouse and pick what it should do
+ (media, editing, windows, browser, keyboard shortcuts, open apps), set
+ gestures on the gesture button and use different settings per application.
+ It has its own HID++ service (no Solaar needed): changes apply instantly,
+ actions avoid simulated keystrokes whenever a direct way exists, and the
+ configuration is re-applied when the mouse reconnects. Interface in English
+ and Portuguese.
+ .
+ Independent project; not affiliated with or endorsed by Logitech.

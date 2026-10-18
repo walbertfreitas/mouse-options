@@ -1,0 +1,14 @@
+[Unit]
+Description=Mouse Options — botões e ajustes dos mouses Logitech
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=io.github.walbertfreitas.MouseOptions
+ExecStart=/usr/bin/mouse-optionsd
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,10 @@
+# Mouse Options: acesso da pessoa logada aos aparelhos Logitech (HID++) e ao uinput (teclado/mouse virtuais).
+KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"
+
+ACTION=="remove", GOTO="mouse_options_end"
+SUBSYSTEM!="hidraw", GOTO="mouse_options_end"
+# USB: receptores e aparelhos com fio
+ATTRS{idVendor}=="046d", TAG+="uaccess"
+# Bluetooth
+KERNELS=="0005:046D:*", TAG+="uaccess"
+LABEL="mouse_options_end"

@@ -1,0 +1,8 @@
+{
+  "uuid": "mouse-options@walbertfreitas.github.io",
+  "name": "Mouse Options",
+  "description": "Companion of the Mouse Options app: tells it which app is focused (per-app profiles on Wayland), shows GNOME's own volume and brightness popups, and performs window actions natively.",
+  "shell-version": ["46", "47", "48", "49", "50"],
+  "url": "https://github.com/walbertfreitas/mouse-options",
+  "version": 1
+}

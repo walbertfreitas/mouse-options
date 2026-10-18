@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Mouse Options
+Name[pt_BR]=Mouse Options
+Comment=Configure the buttons of your Logitech mouse
+Comment[pt_BR]=Configure os botões do seu mouse Logitech
+Exec=mouse-options
+Icon=mouse-options
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=mouse;logitech;buttons;gestures;solaar;options;botões;gestos;
+StartupWMClass=mouse-options

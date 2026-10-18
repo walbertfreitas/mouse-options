@@ -1,0 +1,11 @@
+mouse-options (0.1.0) unstable; urgency=low
+
+  * Primeira versão: configuração visual dos botões de mouses Logitech
+    com serviço HID++ próprio (sem Solaar), catálogo de ações por
+    categoria, atalhos de teclado, abrir aplicativos, comandos, gestos
+    (clique + 4 direções), configurações por aplicativo, velocidade do
+    ponteiro, rolagem, DPI, SmartShift, roda do polegar, receptor
+    Unifying e Easy-Switch. Extensão do GNOME para o Wayland.
+    Interface em português e inglês.
+
+ -- Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>  Sat, 17 Oct 2026 22:30:00 -0300
