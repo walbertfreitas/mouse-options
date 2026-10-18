@@ -419,6 +419,8 @@ class Manager:
 
     def _receiver_event(self, path: str, msg) -> bool:
         rs = self.receivers.get(path)
+        if msg.sub_id & 0xF0 == 0x40:   # só os avisos do receptor (o resto é a conversa dos aparelhos)
+            log.debug("receptor %s: %02X %02X %02X %s", path, msg.index, msg.sub_id, msg.address, msg.data.hex())
         event = Receiver.parse(msg) if rs else None
         if isinstance(event, LockEvent):
             if event.open:
@@ -432,6 +434,8 @@ class Manager:
             if rs.pairing["open"] and event.online:
                 rs.pairing["new"] = event.wpid   # com o receptor aberto: é o aparelho que acabou de parear
             self._pool.submit(self._refresh_receiver, rs)
+            # logo depois de parear o receptor fica ocupado com o aparelho novo: lê de novo daqui a pouco
+            GLib.timeout_add(2000, lambda: self._pool.submit(self._refresh_receiver, rs) and False)
         elif msg.sub_id == 0x40 and msg.index in RECEIVER_SLOTS and rs:   # aparelho despareado
             self._pool.submit(self._refresh_receiver, rs)
         return False

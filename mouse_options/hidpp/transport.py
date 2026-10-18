@@ -8,10 +8,12 @@ a um pedido nosso vai para on_notification (inclusive respostas a outros program
 from __future__ import annotations
 
 import array
+import errno
 import fcntl
 import os
 import select
 import threading
+import time
 from dataclasses import dataclass
 from typing import Callable
 
@@ -126,7 +128,7 @@ class Transport:
             with self._cond:
                 self._waiting, self._reply = (index, sub_id, address), None
             try:
-                os.write(self.fd, raw)
+                self._write(raw)
             except OSError as e:
                 with self._cond:
                     self._waiting = None
@@ -139,6 +141,18 @@ class Transport:
         if reply is None:
             raise Timeout(f"sem resposta de {self.path} (aparelho {index:#x}, {sub_id:#x}/{address:#x})")
         return reply
+
+    def _write(self, raw: bytes) -> None:
+        """Receptores ocupados (ex.: logo depois de parear) às vezes recusam o envio no USB com EPIPE/EAGAIN:
+        espera um pouco e tenta de novo antes de desistir."""
+        for attempt in range(4):
+            try:
+                os.write(self.fd, raw)
+                return
+            except OSError as e:
+                if e.errno not in (errno.EPIPE, errno.EAGAIN) or attempt == 3:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
 
     # ------------------------------------------------------------------ leitura
 

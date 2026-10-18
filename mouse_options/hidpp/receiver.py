@@ -68,7 +68,10 @@ class Receiver:
         return self.kind == "unifying"
 
     def _read(self, sub: int) -> bytes:
-        return self.transport.register(INDEX, READ_LONG, INFO, bytes([sub]))
+        try:
+            return self.transport.register(INDEX, READ_LONG, INFO, bytes([sub]))
+        except Timeout:   # ocupado conversando com um aparelho recém-pareado: mais uma chance
+            return self.transport.register(INDEX, READ_LONG, INFO, bytes([sub]))
 
     def _write(self, action: int, slot: int = 0, value: int = 0) -> None:
         self.transport.register(INDEX, WRITE_SHORT, PAIRING, bytes([action, slot, value]))
