@@ -69,6 +69,9 @@ and PyQt6. The GNOME Shell extension supports GNOME 46–50.
 
 If Solaar is running, Mouse Options asks to turn off its autostart so the two don't fight over the mouse.
 
+**Updating:** install the new `.deb` the same way, then log out and back in (or run
+`systemctl --user restart mouse-optionsd`) so the running service picks up the new version.
+
 To remove: `sudo apt remove mouse-options`.
 
 ## How it works

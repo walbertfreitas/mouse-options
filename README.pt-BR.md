@@ -71,6 +71,9 @@ e PyQt6. A extensão do GNOME Shell funciona no GNOME 46 a 50.
 
 Se o Solaar estiver aberto, o Mouse Options oferece desligá-lo, para os dois não brigarem pelo mouse.
 
+**Para atualizar:** instale o `.deb` novo do mesmo jeito e depois saia da sessão e entre de novo (ou rode
+`systemctl --user restart mouse-optionsd`), para o serviço que está rodando passar a usar a versão nova.
+
 Para remover: `sudo apt remove mouse-options`.
 
 ## Como funciona
