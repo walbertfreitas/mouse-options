@@ -1,3 +1,15 @@
+mouse-options (0.1.4) unstable; urgency=medium
+
+  * Trocar de canal entre Bluetooth e receptor ficava ~0,9 s mais lento:
+    o aparelho declara recursos diferentes em cada caminho e o cache era
+    descartado a cada troca. Agora há um cache para cada caminho.
+  * A entrada virtual (usada para simular teclas) se declarava USB e o
+    sistema a contava como mouse externo: com o ajuste do GNOME
+    "desligar o touchpad com mouse externo", o touchpad ficava sempre
+    desligado. Agora ela se declara virtual.
+
+ -- Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>  Sun, 18 Oct 2026 22:40:00 -0300
+
 mouse-options (0.1.3) unstable; urgency=medium
 
   * Receptor: o estado da ligação de cada aparelho era lido do campo
