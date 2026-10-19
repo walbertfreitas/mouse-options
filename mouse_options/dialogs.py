@@ -1,8 +1,9 @@
 """Janelas de escolha: ação, atalho de teclado, aplicativo e gestos."""
 from __future__ import annotations
 
+import ctypes
+import ctypes.util
 import os
-import sys
 
 from . import actions, apps
 from .i18n import T
@@ -34,16 +35,20 @@ def app_icon(name: str) -> QtGui.QIcon:
 
 # ---------------------------------------------------------------- atalho de teclado
 
-def _keysym_names() -> dict[int, str]:
-    sys.path.insert(0, "/usr/share/solaar/lib")
+def keysym_name(keysym: int) -> str | None:
+    """Nome xkb da tecla (ex.: 0xff55 → "Prior"), o mesmo que o serviço usa para simulá-la."""
+    if not keysym:
+        return None
     try:
-        from keysyms.keysymdef import keysymdef
-    except ImportError:
-        return {}
-    out: dict[int, str] = {}
-    for name, value in keysymdef.items():
-        out.setdefault(value, name)
-    return out
+        lib = ctypes.CDLL(ctypes.util.find_library("xkbcommon") or "libxkbcommon.so.0")
+    except OSError:
+        return None
+    buf = ctypes.create_string_buffer(64)
+    lib.xkb_keysym_get_name.argtypes = [ctypes.c_uint32, ctypes.c_char_p, ctypes.c_size_t]
+    if lib.xkb_keysym_get_name(keysym, buf, len(buf)) <= 0:
+        return None
+    name = buf.value.decode()
+    return None if name.startswith("0x") else name   # 0x…: keysym sem nome
 
 
 class KeyCaptureDialog(W.QDialog):
@@ -56,7 +61,6 @@ class KeyCaptureDialog(W.QDialog):
         super().__init__(parent)
         self.setWindowTitle(T("Atalho de teclado"))
         self.keys: list[str] | None = None
-        self._names = _keysym_names()
         lay = W.QVBoxLayout(self)
         lay.addWidget(W.QLabel(T("Pressione a combinação de teclas que o botão deve enviar.")))
         self.show_keys = W.QLabel("…", objectName="bigkeys", alignment=Qt.AlignmentFlag.AlignCenter)
@@ -83,7 +87,7 @@ class KeyCaptureDialog(W.QDialog):
             keys.append("Alt_L")
         if mods & Qt.KeyboardModifier.MetaModifier:
             keys.append("Super_L")
-        name = self._names.get(ev.nativeVirtualKey())  # no X11, é o keysym da tecla
+        name = keysym_name(ev.nativeVirtualKey())  # no X11 e no Wayland, é o keysym da tecla
         if not name:
             text = QtGui.QKeySequence(ev.key()).toString()
             name = text if text else None

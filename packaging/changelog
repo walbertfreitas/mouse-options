@@ -1,3 +1,11 @@
+mouse-options (0.1.5) unstable; urgency=low
+
+  * Tela "Atalho de teclado": o nome das teclas vem da libxkbcommon (a
+    mesma que o serviço usa para simulá-las) em vez da tabela do Solaar.
+    O Mouse Options não depende mais de nada do Solaar instalado.
+
+ -- Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>  Sun, 18 Oct 2026 23:00:00 -0300
+
 mouse-options (0.1.4) unstable; urgency=medium
 
   * Trocar de canal entre Bluetooth e receptor ficava ~0,9 s mais lento:

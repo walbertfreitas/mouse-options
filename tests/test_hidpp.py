@@ -235,6 +235,15 @@ class RunnerTest(unittest.TestCase):
                                       ("keys", ["Control_L", "t"])])
 
 
+class KeysymNameTest(unittest.TestCase):
+    def test_names_match_what_the_service_simulates(self):
+        """Os nomes gravados pela tela de atalho precisam ser os do xkb (sem depender do Solaar)."""
+        from mouse_options.dialogs import keysym_name
+        self.assertEqual([keysym_name(k) for k in (0xFF55, 0xFFFF, 0xFF1B, 0x61, 0xFFC2, 0x1008FF14)],
+                         ["Prior", "Delete", "Escape", "a", "F5", "XF86AudioPlay"])
+        self.assertIsNone(keysym_name(0))
+
+
 class KeymapTest(unittest.TestCase):
     def test_layouts(self):
         try:
