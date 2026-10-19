@@ -4,5 +4,11 @@ if [ "$1" = "configure" ]; then
     # aplica as permissões novas aos aparelhos já conectados
     udevadm control --reload-rules 2>/dev/null || true
     udevadm trigger --subsystem-match=hidraw --subsystem-match=misc --action=change 2>/dev/null || true
+    # reparo automático do cache do Bluetooth
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+        systemctl enable mouse-options-bt-repair.service >/dev/null 2>&1 || true
+        systemctl restart mouse-options-bt-repair.service || true
+    fi
 fi
 exit 0

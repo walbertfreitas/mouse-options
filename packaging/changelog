@@ -1,3 +1,16 @@
+mouse-options (0.1.6) unstable; urgency=medium
+
+  * Reparo automático do Bluetooth: se a conexão cai enquanto o mouse
+    envia o mapa de botões (descritor HID), o BlueZ guardava o mapa
+    cortado e o mouse nunca mais funcionava ("item fetching failed").
+    Um pequeno serviço do sistema (mouse-options-bt-repair) percebe isso
+    no log do kernel e apaga só o cache daquele aparelho; o pareamento
+    fica e o mouse volta na reconexão seguinte.
+  * README: não recomenda mais "Cache = no" no BlueZ, que fazia o mouse
+    deixar de reconectar sozinho depois da suspensão.
+
+ -- Walbert Freitas <217115970+walbertfreitas@users.noreply.github.com>  Mon, 19 Oct 2026 18:40:00 -0300
+
 mouse-options (0.1.5) unstable; urgency=low
 
   * Tela "Atalho de teclado": o nome das teclas vem da libxkbcommon (a

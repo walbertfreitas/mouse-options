@@ -96,6 +96,11 @@ To remove: `sudo apt remove mouse-options`.
 - **The GNOME Shell extension** (`extension/`) runs shell-side actions and reports the focused app.
 - A udev rule gives the logged-in user access to Logitech hidraw devices and `/dev/uinput` (used only when
   an action has to simulate keys).
+- **`mouse-options-bt-repair`** (small system service, `packaging/bt-repair.py`) fixes a BlueZ problem: if
+  a Bluetooth LE mouse disconnects while its HID descriptor is being read, BlueZ caches the truncated
+  descriptor and the kernel rejects the mouse on every reconnect (`item fetching failed`). The service
+  watches the kernel log and, when that happens, stops BlueZ, deletes only that device's GATT cache (the
+  pairing is kept) and starts BlueZ again.
 
 ## Known limitations
 
@@ -103,9 +108,10 @@ To remove: `sudo apt remove mouse-options`.
 - **Keyboards are not supported yet.**
 - **GNOME on Wayland:** the window runs through XWayland so it gets the system's native title bar (Qt draws
   its own on Wayland). It may look slightly soft with fractional scaling.
-- **Bluetooth:** if the kernel logs `item fetching failed` for the mouse, BlueZ cached a truncated HID
-  descriptor; remove and re-pair the mouse. Setting `Cache = no` under `[GATT]` in
-  `/etc/bluetooth/main.conf` prevents it from coming back.
+- **Bluetooth:** a truncated HID descriptor in BlueZ's cache is repaired automatically (see above); if the
+  mouse still fails afterwards, remove and re-pair it. Do not set `Cache = no` under `[GATT]` in
+  `/etc/bluetooth/main.conf`: BlueZ then forgets the mouse's services and stops reconnecting it
+  automatically (after suspend, power-cycle or Easy-Switch).
 
 ## Contributing
 

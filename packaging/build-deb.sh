@@ -40,6 +40,11 @@ install -d "$EXT"
 install -m 644 "$ROOT"/extension/mouse-options@walbertfreitas.github.io/*.js \
     "$ROOT"/extension/mouse-options@walbertfreitas.github.io/metadata.json "$EXT/"
 
+# Reparo automático do cache do Bluetooth (serviço do sistema, roda como root)
+install -D -m 755 "$ROOT/packaging/bt-repair.py" "$STAGE/usr/libexec/$PKG/bt-repair"
+install -D -m 644 "$ROOT/packaging/mouse-options-bt-repair.service" \
+    "$STAGE/usr/lib/systemd/system/mouse-options-bt-repair.service"
+
 # Permissão para a pessoa logada acessar os aparelhos Logitech e o uinput
 install -D -m 644 "$ROOT/packaging/70-mouse-options.rules" "$STAGE/usr/lib/udev/rules.d/70-mouse-options.rules"
 
@@ -58,6 +63,7 @@ install -d "$STAGE/DEBIAN"
 SIZE=$(du -sk --exclude=DEBIAN "$STAGE" | cut -f1)
 sed -e "s/@VERSION@/$VERSION/" -e "s/@SIZE@/$SIZE/" "$ROOT/packaging/control.in" > "$STAGE/DEBIAN/control"
 install -m 755 "$ROOT/packaging/postinst" "$STAGE/DEBIAN/postinst"
+install -m 755 "$ROOT/packaging/prerm" "$STAGE/DEBIAN/prerm"
 
 # Remove caches de Python que possam ter vindo junto
 find "$STAGE" -name '__pycache__' -prune -exec rm -rf {} +

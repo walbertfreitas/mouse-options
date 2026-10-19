@@ -98,6 +98,11 @@ Para remover: `sudo apt remove mouse-options`.
 - **A extensão do GNOME Shell** (`extension/`) executa as ações do lado do GNOME e informa o app em foco.
 - Uma regra do udev dá à pessoa logada acesso aos aparelhos Logitech e ao `/dev/uinput` (usado só quando
   uma ação precisa simular teclas).
+- **`mouse-options-bt-repair`** (pequeno serviço do sistema, `packaging/bt-repair.py`) corrige um problema
+  do BlueZ: se um mouse Bluetooth LE desconecta enquanto o descritor HID está sendo lido, o BlueZ guarda o
+  descritor cortado e o kernel recusa o mouse em toda reconexão (`item fetching failed`). O serviço
+  acompanha o log do kernel e, quando isso acontece, para o BlueZ, apaga só o cache GATT daquele aparelho
+  (o pareamento fica) e liga o BlueZ de novo.
 
 ## Limitações conhecidas
 
@@ -105,9 +110,10 @@ Para remover: `sudo apt remove mouse-options`.
 - **Teclados ainda não são suportados.**
 - **GNOME no Wayland:** a janela roda pelo XWayland para usar a barra de título do sistema (no Wayland o Qt
   desenha a dele). Com escala fracionada pode ficar um pouco menos nítida.
-- **Bluetooth:** se o kernel registrar `item fetching failed` para o mouse, o BlueZ guardou um descritor
-  HID cortado; remova e pareie o mouse de novo. `Cache = no` na seção `[GATT]` do
-  `/etc/bluetooth/main.conf` evita que isso volte.
+- **Bluetooth:** um descritor HID cortado no cache do BlueZ é reparado automaticamente (veja acima); se o
+  mouse continuar falhando depois disso, remova e pareie de novo. Não use `Cache = no` na seção `[GATT]`
+  do `/etc/bluetooth/main.conf`: o BlueZ passa a esquecer os serviços do mouse e deixa de reconectá-lo
+  sozinho (depois da suspensão, de desligar e ligar o mouse ou do Easy-Switch).
 
 ## Como contribuir
 

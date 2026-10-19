@@ -1,0 +1,18 @@
+[Unit]
+Description=Mouse Options — reparo automático do cache do Bluetooth (mapa HID quebrado)
+Documentation=https://github.com/walbertfreitas/mouse-options
+After=bluetooth.service
+
+[Service]
+ExecStart=/usr/libexec/mouse-options/bt-repair
+Restart=on-failure
+RestartSec=5
+ProtectSystem=strict
+ReadWritePaths=/var/lib/bluetooth
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
