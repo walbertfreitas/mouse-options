@@ -25,6 +25,7 @@ from ..hidpp.transport import HidppError, Timeout, Transport
 from ..store import Store
 from .engine import GESTURES, REGULAR, ButtonEngine
 from .state import State
+from .watchdog import INTERVAL, PING_TIMEOUT, LinkWatch, bluez_disconnect
 
 log = logging.getLogger("mouse-options.manager")
 
@@ -32,6 +33,7 @@ LOGITECH = 0x046D
 POINTING = ("mouse", "trackball", "touchpad")
 SPEED_RANGE = (46, 511)          # POINTER_SPEED: 256 = 1,0×
 RECEIVER_SLOTS = range(1, 7)     # aparelhos atrás de um receptor Unifying/Bolt
+BUS_BLUETOOTH = 0x05
 NOT_THERE = (0x08, 0x09)         # erros HID++ 1.0 do receptor: aparelho desconhecido / não conectado
 # recursos cujas notificações tratamos (e que usamos depois): as posições deles vão para o cache
 NOTIFYING_FEATURES = (hd.FEATURE_SET, hd.DEVICE_FW_VERSION, hd.REPROG_CONTROLS_V4, hd.WIRELESS_DEVICE_STATUS,
@@ -96,6 +98,7 @@ class Manager:
         self.sessions: dict[str, Session] = {}     # caminho do hidraw → sessão
         self._opening: set[str] = set()
         self._slots: dict[str, int] = {}             # hidraw de aparelho atrás de receptor → posição
+        self._bt: dict[str, str] = {}                # hidraw de aparelho Bluetooth → endereço (para o vigia)
         self._parked: dict[str, Transport] = {}      # aparelhos do receptor desligados agora: esperando conectar
         self._pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="aparelho")
         self._udev = pyudev.Context()
@@ -157,11 +160,25 @@ class Manager:
         if not self._is_candidate(d):
             return
         self._hid_paths[path] = d.find_parent("hid").sys_path
+        address = self._bt_address(d)
+        if address:
+            self._bt[path] = address
         slot = self._receiver_slot(d)
         if slot is not None:
             self._slots[path] = slot
         self._opening.add(path)
         self._pool.submit(self._open, path)
+
+    @staticmethod
+    def _bt_address(d) -> str | None:
+        """Aparelho Bluetooth: o BlueZ põe o endereço dele no HID_UNIQ."""
+        hid = d.find_parent("hid")
+        try:
+            bus = int(hid.properties.get("HID_ID", "").split(":")[0], 16)
+        except ValueError:
+            return None
+        address = hid.properties.get("HID_UNIQ", "").upper()
+        return address if bus == BUS_BLUETOOTH and re.fullmatch(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", address) else None
 
     @staticmethod
     def _receiver_slot(d) -> int | None:
@@ -231,6 +248,7 @@ class Manager:
                 if other.key == key and other_path != path:
                     self._link_changed(other_path, online=False)
             self.sessions[path] = session
+            self._watch(session)
             if cache:
                 self.state.entry(key)[cache_name(route)] = cache
                 self.state.save()
@@ -241,6 +259,32 @@ class Manager:
         log.debug("etapas (ms acumulados): %s", ", ".join(steps))
         GLib.idle_add(self.on_changed)
         self._complete(session)
+
+    def _watch(self, s: Session) -> None:
+        """Vigia a ligação Bluetooth nos primeiros minutos (veja watchdog.py)."""
+        address = self._bt.get(s.path)
+        if address is None:
+            return
+        watch = LinkWatch(time.monotonic())
+
+        def tick() -> bool:
+            if self.sessions.get(s.path) is not s or not watch.active(time.monotonic()):
+                return False
+            if watch.should_ping(time.monotonic(), s.transport.last_rx):
+                watch.pending = True
+                self._pool.submit(probe)
+            return True
+
+        def probe() -> None:
+            ok = s.dev.ping(timeout=PING_TIMEOUT) is not None
+            GLib.idle_add(lambda: answered(ok) or False)
+
+        def answered(ok: bool) -> None:
+            if watch.answered(ok) and self.sessions.get(s.path) is s:
+                log.warning("%s: ligação Bluetooth travada (o mouse não responde); reconectando", s.key)
+                bluez_disconnect(address)
+
+        GLib.timeout_add(int(INTERVAL * 1000), tick)
 
     def _park(self, path: str, transport: Transport) -> bool:
         if not transport.closed:
@@ -550,6 +594,7 @@ class Manager:
         self._parked.pop(path, None)
         self._slots.pop(path, None)
         self._hid_paths.pop(path, None)
+        self._bt.pop(path, None)
         s = self.sessions.pop(path, None)
         if s:
             log.info("%s desconectado", s.key)

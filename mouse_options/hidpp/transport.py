@@ -103,6 +103,7 @@ class Transport:
         self._reply: Message | Exception | None = None
         self._stop_r, self._stop_w = os.pipe()
         self.closed = False
+        self.last_rx = time.monotonic()   # qualquer coisa recebida (movimento, botões, HID++): ligação viva
         self._thread = threading.Thread(target=self._read_loop, name=f"hidpp {path}", daemon=True)
         self._thread.start()
 
@@ -180,6 +181,7 @@ class Transport:
                     raw = os.read(self.fd, 64)
                 except BlockingIOError:
                     continue
+                self.last_rx = time.monotonic()
                 msg = Message.parse(raw)
                 if msg is None:
                     continue

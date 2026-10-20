@@ -90,7 +90,9 @@ To remove: `sudo apt remove mouse-options`.
 
 - **`mouse-optionsd`** (systemd user service, `mouse_options/daemon/`) finds Logitech devices through udev,
   speaks HID++ 2.0 (and HID++ 1.0 for receivers) over `/dev/hidraw*`, diverts the buttons you configured
-  and runs the actions. It re-applies everything when the mouse reconnects.
+  and runs the actions. It re-applies everything when the mouse reconnects. Right after a Bluetooth mouse
+  connects (typically after resume), it also watches for a stalled link — connected for BlueZ but nothing
+  goes through — and asks BlueZ to disconnect it so it reconnects cleanly (`daemon/watchdog.py`).
 - **The window** (`mouse_options/gui.py`) only edits `~/.config/mouse-options/config.json` and talks to
   the service over D-Bus.
 - **The GNOME Shell extension** (`extension/`) runs shell-side actions and reports the focused app.
